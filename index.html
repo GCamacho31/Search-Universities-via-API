@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universities Search By Country</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .search-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .search-section input {
+            padding: 10px;
+            font-size: 16px;
+            width: 300px;
+            margin-right: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .search-section button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .search-section button:hover {
+            background-color: #0056b3;
+        }
+
+
+
+
+    /* Existing styles... */
+
+    #loading-message {
+        text-align: center;
+        font-size: 16px;
+        margin-bottom: 20px;
+        color: #007bff;
+        display: none;
+    }
+
+    /* Spinner styles */
+    .spinner {
+        border: 4px solid #f3f3f3; /* Light grey */
+        border-top: 4px solid #3498db; /* Blue */
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+        margin-left: 10px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+
+
+    </style>
+</head>
+<body>
+    <h1>Search Universities By Country</h1>
+    <div class="search-section">
+        <input type="text" id="country-input" placeholder="Enter country name (e.g., Philippines)">
+        <button onclick="searchUniversities()">Search</button>
+    </div>
+    <div id="loading-message" style="display: none;">Loading... <div class="spinner"></div></div>
+    <table id="university-table" class="display">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Country</th>
+                <th>Alpha Code</th>
+                <th>Province</th>
+                <th>Website</th>
+                <th>Domains</th>
+            </tr>
+        </thead>
+        <tbody id="university-list">
+            <tr>
+                <td colspan="6" class="no-results">Search for universities by entering a country name above.</td>
+            </tr>
+        </tbody>
+    </table>
+
+  
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script>
+        let dataTable;
+        
+        // Check for the country parameter in the URL and fetch universities
+        window.onload = function() {
+            const params = new URLSearchParams(window.location.search);
+            
+
+            const country = params.get('country');
+            if (country) {
+                document.getElementById('country-input').value = country;
+                fetchUniversities();
+            }else{
+
+                resetDataTable();
+            }
+
+            displayUniversities(universities);
+
+            
+        };
+
+        //Search
+        function searchUniversities() {
+
+            const country = document.getElementById('country-input').value;
+            //const apiUrl = `http://universities.hipolabs.com/search?country=${country}`;
+            window.location.href=`index.html?country=${country}`;
+
+        }
+
+        // Fetch university data based on user input
+        function fetchUniversities() {
+    const country = document.getElementById('country-input').value;
+    const apiUrl = `http://universities.hipolabs.com/search?country=${country}`;
+    
+    // Show loading message
+    document.getElementById('loading-message').style.display = 'block';
+    
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+            // Hide loading message
+            document.getElementById('loading-message').style.display = 'none';
+            displayUniversities(data);
+        })
+        .catch(error => {
+            console.error('Error fetching data:', error);
+            document.getElementById('loading-message').style.display = 'none'; // Hide loading message
+            document.getElementById('university-list').innerHTML = '<tr><td colspan="6" class="no-results">Failed to load universities.</td></tr>';
+            resetDataTable();
+            return;
+        });
+}
+
+        // Display the list of universities
+        function displayUniversities(universities) {
+            const universityList = document.getElementById('university-list');
+            universityList.innerHTML = ''; // Clear current list
+
+            if (universities.length === 0) {
+                universityList.innerHTML = '<tr><td colspan="6" class="no-results">No universities found.</td></tr>';
+                resetDataTable();
+                return;
+            }
+
+            universities.forEach(university => {
+                const universityElement = document.createElement('tr');
+                universityElement.innerHTML = `
+                    <td>${university.name}</td>
+                    <td>${university.country}</td>
+                    <td>${university.alpha_two_code}</td>
+                    <td>${university['state-province'] ? university['state-province'] : 'N/A'}</td>
+                    <td><a href="${university.web_pages[0]}" target="_blank">${university.web_pages[0]}</a></td>
+                    <td>${university.domains.join(', ')}</td>
+                `;
+                universityList.appendChild(universityElement);
+            });
+
+            // Initialize or reset DataTable
+            resetDataTable();
+        }
+
+        // Reset DataTable
+        function resetDataTable() {
+            if ($.fn.dataTable.isDataTable('#university-table')) {
+                dataTable.clear().destroy(); // Clear and destroy existing DataTable
+            }
+            dataTable = $('#university-table').DataTable(); // Re-initialize DataTable
+        }
+
+       
+    </script>
+</body>
+</html>
